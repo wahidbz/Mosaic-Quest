@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a6b3c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Mosaic Quest 🀄 Pi</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app" class="light-mode">
+
+  <!-- ===== PARTICLE CANVAS ===== -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- ===== SCREEN: LOGIN ===== -->
+  <div id="screen-login" class="screen active">
+    <div class="login-bg"></div>
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="logo-icon">🀄</div>
+        <h1 class="logo-title">Mosaic Quest</h1>
+        <p class="logo-sub" data-i18n="tagline">Match • Win • Earn Pi</p>
+      </div>
+      <div class="login-card">
+        <div class="pi-badge">
+          <span class="pi-symbol">π</span>
+          <span data-i18n="piNetwork">Pi Network</span>
+        </div>
+        <h2 data-i18n="welcomeBack">Welcome Back!</h2>
+        <div class="form-group">
+          <label data-i18n="username">Username</label>
+          <input type="text" id="login-username" placeholder="@username" maxlength="20" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="piId">Pi User ID</label>
+          <input type="text" id="login-piid" placeholder="pi_xxxxx" maxlength="30" />
+        </div>
+        <button id="btn-login" class="btn-primary btn-large" onclick="handleLogin()">
+          <span class="pi-symbol">π</span>
+          <span data-i18n="loginWithPi">Login with Pi</span>
+        </button>
+        <button class="btn-ghost" onclick="handleGuestLogin()">
+          <span data-i18n="playAsGuest">Play as Guest</span>
+        </button>
+      </div>
+      <div class="login-features">
+        <div class="feature-item"><span>🎮</span><span data-i18n="feature1">Mahjong Solitaire</span></div>
+        <div class="feature-item"><span>💰</span><span data-i18n="feature2">Earn Pi Rewards</span></div>
+        <div class="feature-item"><span>🏆</span><span data-i18n="feature3">Global Leaderboard</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: HOME ===== -->
+  <div id="screen-home" class="screen">
+    <div class="screen-header">
+      <div class="user-info" onclick="showScreen('profile')">
+        <div class="avatar">🀄</div>
+        <div class="user-details">
+          <span id="home-username" class="username">Player</span>
+          <span id="home-level" class="user-level">Lv.1</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="showScreen('wallet')" title="Wallet">
+          <span class="pi-symbol">π</span>
+          <span id="home-pi-balance" class="balance-chip">0.00</span>
+        </button>
+        <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+
+    <div class="home-content">
+      <!-- Daily Reward Banner -->
+      <div id="daily-reward-banner" class="daily-banner" onclick="claimDailyReward()">
+        <div class="banner-icon">🎁</div>
+        <div class="banner-text">
+          <span data-i18n="dailyReward">Daily Reward</span>
+          <span id="daily-reward-status" class="status-badge">Claim Now!</span>
+        </div>
+        <div class="banner-arrow">→</div>
+      </div>
+
+      <!-- Game Modes -->
+      <div class="section-title" data-i18n="chooseMode">Choose Mode</div>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="selectMode('classic')">
+          <div class="mode-icon">🎯</div>
+          <div class="mode-name" data-i18n="classic">Classic</div>
+          <div class="mode-desc" data-i18n="classicDesc">Match all tiles</div>
+        </div>
+        <div class="mode-card" onclick="selectMode('timed')">
+          <div class="mode-icon">⏱️</div>
+          <div class="mode-name" data-i18n="timed">Timed</div>
+          <div class="mode-desc" data-i18n="timedDesc">Beat the clock</div>
+        </div>
+        <div class="mode-card" onclick="selectMode('challenge')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name" data-i18n="challenge">Challenge</div>
+          <div class="mode-desc" data-i18n="challengeDesc">No hints allowed</div>
+        </div>
+      </div>
+
+      <!-- Level Selection -->
+      <div class="section-title" data-i18n="selectLevel">Select Level</div>
+      <div id="level-grid" class="level-grid"></div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <div class="stat-item">
+          <div class="stat-val" id="stat-games">0</div>
+          <div class="stat-label" data-i18n="gamesPlayed">Games</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-wins">0</div>
+          <div class="stat-label" data-i18n="wins">Wins</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stat-best">0</div>
+          <div class="stat-label" data-i18n="bestScore">Best</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val pi-color" id="stat-pi">0.00</div>
+          <div class="stat-label" data-i18n="totalPi">Pi Earned</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: GAME ===== -->
+  <div id="screen-game" class="screen">
+    <!-- Game HUD -->
+    <div class="game-hud">
+      <button class="hud-btn" onclick="showPauseMenu()" title="Back">⬅</button>
+      <div class="hud-center">
+        <div class="hud-info">
+          <div class="hud-label" data-i18n="score">Score</div>
+          <div id="game-score" class="hud-value">0</div>
+        </div>
+        <div class="hud-info" id="timer-display">
+          <div class="hud-label" data-i18n="time">Time</div>
+          <div id="game-timer" class="hud-value">0:00</div>
+        </div>
+        <div class="hud-info">
+          <div class="hud-label" data-i18n="moves">Moves</div>
+          <div id="game-moves" class="hud-value">0</div>
+        </div>
+      </div>
+      <div class="hud-right">
+        <span class="hud-level-badge" id="game-level-badge">Lv.1</span>
+      </div>
+    </div>
+
+    <!-- Selected Tiles Slot -->
+    <div class="selected-slot">
+      <div id="slot-tile1" class="slot-tile empty"></div>
+      <div class="slot-arrow">→</div>
+      <div id="slot-tile2" class="slot-tile empty"></div>
+      <div id="match-feedback" class="match-feedback"></div>
+    </div>
+
+    <!-- Game Board -->
+    <div id="board-wrapper" class="board-wrapper">
+      <div id="game-board" class="game-board"></div>
+    </div>
+
+    <!-- Game Controls -->
+    <div class="game-controls">
+      <button class="ctrl-btn" id="btn-hint" onclick="useHint()">
+        <span class="ctrl-icon">💡</span>
+        <span class="ctrl-label" data-i18n="hint">Hint</span>
+        <span id="hint-cost" class="ctrl-cost">0.1π</span>
+      </button>
+      <button class="ctrl-btn" id="btn-undo" onclick="useUndo()">
+        <span class="ctrl-icon">↩️</span>
+        <span class="ctrl-label" data-i18n="undo">Undo</span>
+        <span class="ctrl-cost">Free</span>
+      </button>
+      <button class="ctrl-btn" id="btn-shuffle" onclick="useShuffle()">
+        <span class="ctrl-icon">🔀</span>
+        <span class="ctrl-label" data-i18n="shuffle">Shuffle</span>
+        <span id="shuffle-cost" class="ctrl-cost">0.2π</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: PROFILE ===== -->
+  <div id="screen-profile" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">⬅</button>
+      <h2 data-i18n="profile">Profile</h2>
+      <button class="icon-btn" onclick="handleLogout()">🚪</button>
+    </div>
+    <div class="profile-content">
+      <div class="profile-hero">
+        <div class="profile-avatar">🀄</div>
+        <div id="profile-username" class="profile-name">Player</div>
+        <div id="profile-piid" class="profile-piid">pi_xxxxx</div>
+        <div class="profile-level-bar">
+          <div class="level-info">
+            <span data-i18n="level">Level</span>
+            <span id="profile-level">1</span>
+          </div>
+          <div class="xp-bar"><div id="xp-fill" class="xp-fill" style="width:30%"></div></div>
+          <div class="xp-text"><span id="profile-xp">300</span> / <span id="profile-xp-max">1000</span> XP</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🎮</div>
+          <div id="p-games" class="stat-number">0</div>
+          <div class="stat-name" data-i18n="gamesPlayed">Games Played</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏆</div>
+          <div id="p-wins" class="stat-number">0</div>
+          <div class="stat-name" data-i18n="wins">Wins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⭐</div>
+          <div id="p-stars" class="stat-number">0</div>
+          <div class="stat-name" data-i18n="stars">Stars</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div id="p-matches" class="stat-number">0</div>
+          <div class="stat-name" data-i18n="totalMatches">Matches</div>
+        </div>
+      </div>
+
+      <div class="section-title" data-i18n="achievements">Achievements</div>
+      <div id="achievements-grid" class="achievements-grid"></div>
+
+      <div class="section-title" data-i18n="scoreHistory">Score History</div>
+      <div id="score-history-list" class="score-history-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: WALLET ===== -->
+  <div id="screen-wallet" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">⬅</button>
+      <h2 data-i18n="wallet">Pi Wallet</h2>
+      <div></div>
+    </div>
+    <div class="wallet-content">
+      <div class="wallet-card">
+        <div class="wallet-logo"><span class="pi-symbol-lg">π</span></div>
+        <div class="wallet-label" data-i18n="piBalance">Pi Balance</div>
+        <div id="wallet-balance" class="wallet-balance">0.000</div>
+        <div class="wallet-network" data-i18n="testnet">Testnet (Mock)</div>
+      </div>
+
+      <div class="wallet-actions">
+        <div class="wallet-action" onclick="showShop()">
+          <div class="waction-icon">🛒</div>
+          <div class="waction-label" data-i18n="shop">Shop</div>
+        </div>
+        <div class="wallet-action" onclick="showEarnInfo()">
+          <div class="waction-icon">💰</div>
+          <div class="waction-label" data-i18n="earnPi">Earn Pi</div>
+        </div>
+        <div class="wallet-action" onclick="claimDailyReward()">
+          <div class="waction-icon">🎁</div>
+          <div class="waction-label" data-i18n="dailyReward">Daily</div>
+        </div>
+      </div>
+
+      <div class="coin-display">
+        <span class="coin-icon">🪙</span>
+        <span data-i18n="coins">Coins:</span>
+        <span id="wallet-coins" class="coin-val">0</span>
+      </div>
+
+      <div class="section-title" data-i18n="transactions">Transaction History</div>
+      <div id="transaction-list" class="transaction-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: LEADERBOARD ===== -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">⬅</button>
+      <h2 data-i18n="leaderboard">Leaderboard</h2>
+      <button class="icon-btn" onclick="refreshLeaderboard()">🔄</button>
+    </div>
+    <div class="leaderboard-content">
+      <div class="lb-tabs">
+        <button class="lb-tab active" onclick="switchLbTab('global', this)" data-i18n="global">Global</button>
+        <button class="lb-tab" onclick="switchLbTab('weekly', this)" data-i18n="weekly">Weekly</button>
+        <button class="lb-tab" onclick="switchLbTab('friends', this)" data-i18n="friends">Friends</button>
+      </div>
+      <div id="leaderboard-list" class="leaderboard-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: SETTINGS ===== -->
+  <div id="screen-settings" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">⬅</button>
+      <h2 data-i18n="settings">Settings</h2>
+      <div></div>
+    </div>
+    <div class="settings-content">
+      <div class="settings-group">
+        <div class="settings-title" data-i18n="audio">Audio</div>
+        <div class="setting-row">
+          <span class="setting-label">🔊 <span data-i18n="soundEffects">Sound Effects</span></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-sound" checked onchange="toggleSetting('sound', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🎵 <span data-i18n="backgroundMusic">Background Music</span></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-music" checked onchange="toggleSetting('music', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-title" data-i18n="appearance">Appearance</div>
+        <div class="setting-row">
+          <span class="setting-label">🌙 <span data-i18n="darkMode">Dark Mode</span></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-dark" onchange="setTheme(this.checked ? 'dark' : 'light')" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🎨 <span data-i18n="tileTheme">Tile Theme</span></span>
+          <select id="setting-theme" onchange="setTileTheme(this.value)" class="settings-select">
+            <option value="classic">Classic</option>
+            <option value="neon">Neon</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-title" data-i18n="language">Language</div>
+        <div class="lang-buttons">
+          <button class="lang-btn active" id="lang-en" onclick="setLanguage('en')">🇺🇸 English</button>
+          <button class="lang-btn" id="lang-fr" onclick="setLanguage('fr')">🇫🇷 Français</button>
+          <button class="lang-btn" id="lang-ar" onclick="setLanguage('ar')">🇸🇦 العربية</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-title" data-i18n="gameSettings">Game Settings</div>
+        <div class="setting-row">
+          <span class="setting-label">✨ <span data-i18n="animations">Animations</span></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-animations" checked onchange="toggleSetting('animations', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">💡 <span data-i18n="autoHint">Auto-Hint Warning</span></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-autohint" checked onchange="toggleSetting('autohint', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-group danger-group">
+        <button class="btn-danger" onclick="confirmResetProgress()" data-i18n="resetProgress">Reset Progress</button>
+        <button class="btn-ghost" onclick="showAbout()" data-i18n="about">About</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: ADMIN ===== -->
+  <div id="screen-admin" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="showScreen('home')">⬅</button>
+      <h2>Admin Panel</h2>
+      <div class="admin-badge">MOCK</div>
+    </div>
+    <div class="admin-content">
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <div id="admin-total-players" class="admin-stat-val">1</div>
+          <div class="admin-stat-label">Players</div>
+        </div>
+        <div class="admin-stat">
+          <div id="admin-total-games" class="admin-stat-val">0</div>
+          <div class="admin-stat-label">Games</div>
+        </div>
+        <div class="admin-stat">
+          <div id="admin-total-pi" class="admin-stat-val">0</div>
+          <div class="admin-stat-label">Pi Distributed</div>
+        </div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Reward Adjustment</div>
+        <div class="admin-row">
+          <label>Pi per Level</label>
+          <input type="range" id="admin-pi-rate" min="0.05" max="1.0" step="0.05" value="0.1" oninput="updateAdminSetting('piRate', this.value)" />
+          <span id="admin-pi-rate-val">0.10 π</span>
+        </div>
+        <div class="admin-row">
+          <label>Coins per Match</label>
+          <input type="range" id="admin-coins-rate" min="1" max="20" step="1" value="5" oninput="updateAdminSetting('coinsRate', this.value)" />
+          <span id="admin-coins-rate-val">5 🪙</span>
+        </div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Player Management</div>
+        <div id="admin-player-list" class="admin-player-list"></div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Game Statistics</div>
+        <div id="admin-game-stats" class="admin-game-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav id="bottom-nav" class="bottom-nav hidden">
+    <button class="nav-item active" id="nav-home" onclick="showScreen('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label" data-i18n="home">Home</span>
+    </button>
+    <button class="nav-item" id="nav-play" onclick="showLevelSelect()">
+      <span class="nav-icon">🎮</span>
+      <span class="nav-label" data-i18n="play">Play</span>
+    </button>
+    <button class="nav-item" id="nav-profile" onclick="showScreen('profile')">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label" data-i18n="profile">Profile</span>
+    </button>
+    <button class="nav-item" id="nav-wallet" onclick="showScreen('wallet')">
+      <span class="nav-icon">π</span>
+      <span class="nav-label" data-i18n="wallet">Wallet</span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label" data-i18n="settings">Settings</span>
+    </button>
+  </nav>
+
+  <!-- ===== MODAL: PAUSE ===== -->
+  <div id="modal-pause" class="modal hidden">
+    <div class="modal-card">
+      <h3 data-i18n="paused">Game Paused</h3>
+      <button class="btn-primary" onclick="resumeGame()" data-i18n="resume">Resume</button>
+      <button class="btn-secondary" onclick="restartLevel()" data-i18n="restart">Restart</button>
+      <button class="btn-secondary" onclick="exitToHome()" data-i18n="exitGame">Exit Game</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: LEVEL COMPLETE ===== -->
+  <div id="modal-win" class="modal hidden">
+    <div class="modal-card win-card">
+      <div class="win-stars" id="win-stars"></div>
+      <h3 data-i18n="levelComplete">Level Complete!</h3>
+      <div class="win-score">
+        <span data-i18n="score">Score</span>
+        <span id="win-score-val" class="win-score-val">0</span>
+      </div>
+      <div class="win-rewards">
+        <div class="reward-item"><span>π</span><span id="win-pi">+0.10</span></div>
+        <div class="reward-item"><span>🪙</span><span id="win-coins">+50</span></div>
+      </div>
+      <div class="win-time">
+        <span>⏱</span>
+        <span id="win-time-val">0:00</span>
+      </div>
+      <button class="btn-primary" onclick="nextLevel()" data-i18n="nextLevel">Next Level</button>
+      <button class="btn-secondary" onclick="restartLevel()" data-i18n="playAgain">Play Again</button>
+      <button class="btn-ghost" onclick="exitToHome()" data-i18n="backHome">Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: GAME OVER ===== -->
+  <div id="modal-gameover" class="modal hidden">
+    <div class="modal-card">
+      <div class="gameover-icon">😔</div>
+      <h3 data-i18n="gameOver">Game Over</h3>
+      <p id="gameover-reason" class="gameover-reason"></p>
+      <div class="win-score">
+        <span data-i18n="score">Score</span>
+        <span id="gameover-score-val" class="win-score-val">0</span>
+      </div>
+      <button class="btn-primary" onclick="restartLevel()" data-i18n="tryAgain">Try Again</button>
+      <button class="btn-secondary" onclick="useShuffle()" id="btn-shuffle-gameover" data-i18n="shuffleBoard">Shuffle Board</button>
+      <button class="btn-ghost" onclick="exitToHome()" data-i18n="backHome">Back to Home</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: DAILY REWARD ===== -->
+  <div id="modal-daily" class="modal hidden">
+    <div class="modal-card">
+      <div class="daily-icon">🎁</div>
+      <h3 data-i18n="dailyRewardTitle">Daily Reward!</h3>
+      <div class="daily-rewards-display">
+        <div class="daily-reward-item">
+          <span class="pi-symbol">π</span>
+          <span id="daily-pi-reward">+0.50</span>
+        </div>
+        <div class="daily-reward-item">
+          <span>🪙</span>
+          <span id="daily-coins-reward">+100</span>
+        </div>
+      </div>
+      <div id="daily-streak" class="daily-streak"></div>
+      <button class="btn-primary" onclick="closeModal('daily')" data-i18n="claim">Claim!</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: SHOP ===== -->
+  <div id="modal-shop" class="modal hidden">
+    <div class="modal-card shop-card">
+      <h3 data-i18n="shop">Pi Shop</h3>
+      <div class="shop-balance">
+        <span class="pi-symbol">π</span>
+        <span id="shop-balance-val">0.00</span>
+      </div>
+      <div class="shop-grid">
+        <div class="shop-item" onclick="buyItem('hints3')">
+          <div class="shop-icon">💡</div>
+          <div class="shop-name">3 Hints</div>
+          <div class="shop-price pi-color">0.30 π</div>
+        </div>
+        <div class="shop-item" onclick="buyItem('shuffle3')">
+          <div class="shop-icon">🔀</div>
+          <div class="shop-name">3 Shuffles</div>
+          <div class="shop-price pi-color">0.60 π</div>
+        </div>
+        <div class="shop-item" onclick="buyItem('neon_theme')">
+          <div class="shop-icon">🌈</div>
+          <div class="shop-name">Neon Theme</div>
+          <div class="shop-price pi-color">1.00 π</div>
+        </div>
+        <div class="shop-item" onclick="buyItem('coins200')">
+          <div class="shop-icon">🪙</div>
+          <div class="shop-name">200 Coins</div>
+          <div class="shop-price pi-color">0.50 π</div>
+        </div>
+        <div class="shop-item" onclick="buyItem('xp2x')">
+          <div class="shop-icon">⚡</div>
+          <div class="shop-name">2× XP (1hr)</div>
+          <div class="shop-price pi-color">0.20 π</div>
+        </div>
+        <div class="shop-item" onclick="buyItem('minimal_theme')">
+          <div class="shop-icon">🎨</div>
+          <div class="shop-name">Minimal Theme</div>
+          <div class="shop-price pi-color">0.80 π</div>
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="closeModal('shop')" data-i18n="close">Close</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: ACHIEVEMENT ===== -->
+  <div id="modal-achievement" class="modal hidden">
+    <div class="modal-card achievement-card">
+      <div class="ach-badge-big" id="ach-icon">🏅</div>
+      <h3 data-i18n="achievementUnlocked">Achievement Unlocked!</h3>
+      <div id="ach-name" class="ach-name">First Match</div>
+      <div id="ach-desc" class="ach-desc">Matched your first pair of tiles!</div>
+      <button class="btn-primary" onclick="closeModal('achievement')" data-i18n="awesome">Awesome!</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: ABOUT ===== -->
+  <div id="modal-about" class="modal hidden">
+    <div class="modal-card">
+      <div class="about-logo">🀄</div>
+      <h3>Mosaic Quest</h3>
+      <p class="about-version">v1.0.0</p>
+      <p class="about-desc" data-i18n="aboutDesc">A Mahjong-style puzzle game integrated with Pi Network. Match tiles, earn Pi, and climb the leaderboard!</p>
+      <div class="about-tech">
+        <span>Pi Browser Optimized</span>
+        <span>•</span>
+        <span>Mobile First</span>
+        <span>•</span>
+        <span>Web Audio API</span>
+      </div>
+      <button class="btn-ghost" onclick="closeModal('about')" data-i18n="close">Close</button>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATIONS ===== -->
+  <div id="toast-container" class="toast-container"></div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
